@@ -19,6 +19,37 @@ DB_PATH = ROOT / "wiki.db"
 MODEL = "qwen3:8b"
 OLLAMA_HOST = "http://localhost:11434"
 
+# ── Category and Prompt Constant Definitions ────────────────────────────────────────
+
+CATEGORIES = [
+    "activities",
+    "groups",
+    "locations",
+    "misc",
+]
+
+METADATATAGS = ["TITLE", "CATEGORY", "LINKED ACTIVITIES", "LINKED GROUPS", "LINKED LOCATIONS"]
+
+PAGEFORMAT = f"""
+    The page's format should always take this form where information inside square brackets describes what should occupy that space
+    
+    TITLE: [A short descriptive title - Take one key element from the file e.g place name, group or activity  - REQUIRED]
+    CATEGORY: [The Most applicable Category  - REQUIRED]
+    LINKED ACTIVITIES: [a reference to any relevant activities - ignore if category is activity]
+    LINKED GROUPS: [A reference to any relevant groups - ignore if category is group]
+    LINKED LOCATIONS: [A reference to any relevant locations - ignore if category is location ]
+
+    A new Line
+    CONTENT:
+    [Exclusively the useful knowledge gained from the ingested file]
+
+    Rules
+    - If a field is required, make sure that field shows up in the final page
+    - If the category is an activity, the title should be the name of the activity
+    - If the category is a group, the title should be the name of the group
+    - If the category is a location, the title should be the name of the location
+
+"""
 
 # ── Ollama connection ────────────────────────────────────────
 
@@ -99,9 +130,13 @@ def search(query: str, limit: int = 5) -> list[dict]:
 
 # ── Wiki operations ──────────────────────────────────────────
 
-def update(title: str, content: str, source: str = "") -> Path:
+def update(title: str, content: str, source: str = "", category: str = "misc") -> Path:
     """Create or replace a wiki page with LLM-generated content."""
-    WIKI.mkdir(parents=True, exist_ok=True)
+
+    folder = WIKI / category
+    folder.mkdir(parents=True, exist_ok=True)
+
+
 
     # Use a simple filename derived from the title.
     slug = "".join(
@@ -109,7 +144,7 @@ def update(title: str, content: str, source: str = "") -> Path:
         for c in title
     ).strip("-")
     slug = "-".join(part for part in slug.split("-") if part)
-    path = WIKI / f"{slug or 'untitled'}.md"
+    path = folder /  f"{slug or 'untitled'}.md"
 
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
 
@@ -145,9 +180,31 @@ Source:
     return path
 
 
-def ingest(source_path: str) -> Path:
+def ingest(source_path: str) -> Path | None:
     """Read a source document and use Ollama to update the wiki."""
     path = Path(source_path).expanduser()
+    inbox = (SOURCES / "inbox").resolve()
+    processed = SOURCES / "processed"
+    processed.mkdir(parents=True, exist_ok=True)
+
+    if path.is_dir():
+        files = sorted(
+            p for p in path.iterdir()
+            if p.is_file() and p.suffix.lower() in {".txt", ".md"}
+        )
+
+        if not files:
+            print(f"No .txt or .md files found in {path}")
+            return None
+
+        for file in files:
+            try:
+                ingest(str(file))
+            except Exception as exc:
+                print(f"Failed to ingest {file.name}: {exc}")
+
+        return None
+
 
     if not path.is_absolute():
         path = (Path.cwd() / path).resolve()
@@ -166,19 +223,22 @@ def ingest(source_path: str) -> Path:
 
     prompt = f"""
 Analyze the source material and extract its main topic.
+Select the CORRECT category from the Approved list
+If a piece of data feels like it shouldn't go in any of the specific categories, it should go in misc
 
-Return:
-1. A short, descriptive page title on the first line, prefixed with TITLE:
-2. A newline.
-3. The useful knowledge in Markdown.
+APPROVED CATEGORIES: {CATEGORIES}
+
+{PAGEFORMAT}
+
+SOURCE:
+{text}
 
 Preserve important facts, names, definitions, and qualifications.
 You must NOT invent information, the only information you should add to the fils should come from the markdown
 You only know what you are provided
 Do not use outside information to aid in your creation of the markdown file
 
-SOURCE:
-{text}
+
 """
 
     result = ask_model(
@@ -187,17 +247,30 @@ SOURCE:
     )
 
     first_line, separator, body = result.partition("\n")
-    title = first_line.removeprefix("TITLE:").strip()
+    # title = first_line.removeprefix("TITLE:").strip()
+    metadata = {}
+    for line in result.splitlines():
+        if ":" in line:
+            key, value = line.split(":", 1)
+
+            # Stripped and upper case for consistency and to stop hallucinations
+            key = key.strip().upper()
+
+            if key in METADATATAGS:
+                metadata[key] = value.strip()
+
+    title = metadata.get("TITLE", path.stem.title())
+    category = metadata.get("CATEGORY", "misc")
+    # linkedActivities = metadata.get("LINKED ACTIVITIES", "")
+    # linkedGroups = metadata.get("LINKED GROUPS", "")
+    # linkedLocations = metadata.get("LINKED LOCATIONS", "")
+
+    if category not in CATEGORIES:
+        category = "misc"
 
     if not separator or not title:
         title = path.stem.replace("_", " ").replace("-", " ").title()
         body = result
-
-    wiki_page = update(title, body, source=str(path))
-
-    inbox = (SOURCES / "inbox").resolve()
-    processed = SOURCES / "processed"
-    processed.mkdir(parents=True, exist_ok=True)
 
     if path.is_relative_to(inbox):
         destination = processed / path.name
@@ -205,6 +278,11 @@ SOURCE:
         if destination.exists():
             raise FileExistsError(f"Cannot move source: {destination} already exists")
         path.rename(destination)
+        source_path = destination
+    else:
+        source_path = path
+
+    wiki_page = update(title, body, source=str(path), category=str(category))
     return wiki_page
 
 
@@ -233,6 +311,8 @@ Rules:
 - Do not pretend to have read source material that isn't included.
 - Do not ignore important information simply because one item appears relevant
 - Use all relevant items in your response
+- Regardless of how little information is given, do not try and add information from the context that isn't asked for
+- For example: if asked to name a list of a category, only give the names as the user did not ask for more information than this
 
 Wiki context:
 {context}
@@ -275,7 +355,9 @@ def main():
     try:
         if args.command == "ingest":
             page = ingest(args.file)
-            print(f"Updated wiki page: {page.relative_to(ROOT)}")
+
+            if page is not None:
+                print(f"Updated wiki page: {page.relative_to(ROOT)}")
 
         elif args.command == "update":
             content = Path(args.file).read_text(encoding="utf-8")
@@ -301,7 +383,7 @@ def main():
         # Includes connection and model errors from Ollama.
         print(
             f"Operation failed: {exc}\n"
-            "Check that Ollama is running and the model is installed.",
+            "Check that LLM Model is running and the model is installed.",
             file=sys.stderr,
         )
         sys.exit(1)

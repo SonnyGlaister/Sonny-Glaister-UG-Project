@@ -1,0 +1,1 @@
+Queen Mary University of London has a Snow Sports Club which occasionally has skiing / snowboarding events but has more frequent social events

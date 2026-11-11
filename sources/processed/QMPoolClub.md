@@ -1,0 +1,1 @@
+Queen Mary Pool Club is a club at queen mary university that play pool twice a week. There is a casual session and a competitive session so there is something for everyone

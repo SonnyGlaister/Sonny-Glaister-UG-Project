@@ -1,0 +1,1 @@
+Quentin Tarantino is a director and he made kill bill, pulp fiction and django unchained

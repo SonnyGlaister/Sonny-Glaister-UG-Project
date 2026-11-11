@@ -1,0 +1,1 @@
+Queen Mary University of London has a Pool club, it is a great space to learn how to play pool or have a more competitive match
