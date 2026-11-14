@@ -1,0 +1,1 @@
+Queen Mary University of London has a football club with 6 teams, it is one of the more popular sports clubs at the university

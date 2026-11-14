@@ -1,0 +1,1 @@
+apples are green and red, bananas go from green to yellow to brown to black, limes are green, lemons are yellow, tomatoes are red
