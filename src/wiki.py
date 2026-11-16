@@ -18,6 +18,8 @@ DB_PATH = ROOT / "wiki.db"
 
 MODEL = "qwen3:8b"
 OLLAMA_HOST = "http://localhost:11434"
+# Stop new client being created every time
+client = ollama.Client(host=OLLAMA_HOST)
 
 # ── Category and Prompt Constant Definitions ────────────────────────────────────────
 
@@ -50,20 +52,194 @@ PAGEFORMAT = f"""
     - If the category is a location, the title should be the name of the location
 
 """
+# ── Linting Agent Stuff ────────────────────────────────────────
+
+#  TODO: NEED TO ADD CITATION FUNCTIONALITY FOR LINKING - DUNNO HOW
+LINT_AGENTS = {
+    # Agent that checks for the correct title
+    "Title Agent": f"""
+
+    You must extract the title of the page
+
+    Rules:
+    - Title must be short
+    - If the page is about a group it should be the name of the group
+    - If the page is about an activity it should be the name of the activity
+    - If the page is about a location it should be the name of the location
+
+    OUTPUT:
+        TITLE: title
+
+""",
+    # Agent that checks for the correct category
+    "Category Agent": f"""
+
+    You must assess whether the page has been placed in the correct category
+
+    Approved categories: {CATEGORIES}
+
+    Rules:
+    - Category must exist
+    - Category matches the folder that contains the page
+    - The page's content matches the category
+
+    OUTPUT:
+        CATEGORY: CATEGORY NAME
+
+""",
+
+
+
+    # Agent that checks for linked groups for the page
+    "Group Linking Agent": f"""
+    Check the linked groups for the page
+
+    Rules:
+    - If a group is mentioned, extract this group's name and add it to the output once, if it has already been mentioned do not add it again
+    - Do not invent groups
+
+    Output:
+        LINKED GROUPS: GROUP NAME
+        or
+        LINKED GROUPS: GROUP NAME 1, GROUP NAME 2
+        or
+        LINKED GROUPS: NONE
+
+""",
+
+
+
+    # Agent that checks for linked activities for the page
+    "Activity Linking Agent": f"""
+    Check the linked activities for the page
+
+    Rules:
+    - If an activity is mentioned extract the activity's name and add it to the output once, if it has already been mentioned do not add it again
+    - Do not invent activities
+
+    Output:
+        LINKED ACTIVITIES: ACTIVITY NAME
+        or
+        LINKED ACTIVITIES: ACTIVITY NAME 1, ACTIVITY NAME 2
+        or
+        LINKED ACTIVITIES: NONE
+""",
+
+
+
+    # Agent that checks for linked locations for the page
+    "Location Linking Agent": f"""
+    Check the linked locations for the page
+
+    Rules:
+    - Extract the name of any known locations and add them to the output once, if it has already been mentioned do not add it again
+    - Do not invent locations
+
+    Output:
+        LINKED LOCATIONS: LOCATION NAME
+        or
+        LINKED LOCATIONS: LOCATION NAME 1, LOCATION NAME 2
+        or
+        LINKED LOCATIONS: NONE
+""",
+
+
+
+    # Agent for checking content
+    "Content Agent": f"""
+    Extract the content from the ingested file
+
+    Rules: 
+    - Do not invent information
+    - Take all information ingested as absolute truth
+    - Output in a succinct way that contains all important information from the ingested file
+    
+    Output:
+    CONTENT: [all extracted content]
+
+"""
+
+}
+
 
 # ── Ollama connection ────────────────────────────────────────
 
 def ask_model(prompt: str, system: str = "") -> str:
     """Send a prompt to Ollama and return its response."""
-    client = ollama.Client(host=OLLAMA_HOST)
 
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
     messages.append({"role": "user", "content": prompt})
 
-    response = client.chat(model=MODEL, messages=messages)
+    response = client.chat(
+        model=MODEL, 
+        messages=messages,
+        options={"temperature": 0}
+        )
     return response.message.content or ""
+
+# Run a specialized agent from the LINT_AGENTS dictionary
+def run_agent(agent_name: str, source: str, previous_results: dict = None) -> str:
+    previous_results = previous_results or {}
+
+    context = "\n\n".join(
+        f"{name}:\n{result}"
+        for name, result in previous_results.items()
+    ) 
+
+    prompt = f"""
+    ORIGINAL SOURCE:
+    {source}
+
+    PREVIOUS AGENT RESULTS:
+    {context or "None"}
+
+    YOUR TASK:
+    {LINT_AGENTS[agent_name]}
+
+    Only return the output specified in your task
+    Do not invent or add more than specified
+
+    """
+    return ask_model(
+        prompt,
+        system=f"You are the {agent_name} in a knowledge extraction pipeline"
+    )
+
+# Page generation pipeline construction
+def generate_page(source: str) -> dict:
+    results = {}
+    for agent_name in LINT_AGENTS:
+        # CAN ADD DEBUG HERE TO CHECK WHAT AGENT IS RUNNING
+        print(agent_name)
+        results[agent_name] = run_agent(
+            agent_name,
+            source,
+            results
+        )
+    return results;
+
+# Combining the agent outputs into specified format above
+def assemble_page(results: dict) -> str:
+    title = results["Title Agent"]
+    category = results["Category Agent"]
+    groups = results["Group Linking Agent"]
+    activities = results["Activity Linking Agent"]
+    locations = results["Location Linking Agent"]
+    content = results["Content Agent"]
+
+    return f"""
+
+    {title}
+    {category}
+    {groups}
+    {activities}
+    {locations}
+
+    {content}
+""".strip()
+    
 
 
 # ── Search index ─────────────────────────────────────────────
@@ -130,7 +306,9 @@ def search(query: str, limit: int = 5) -> list[dict]:
 
 # ── Wiki operations ──────────────────────────────────────────
 
-def update(title: str, content: str, source: str = "", category: str = "misc") -> Path:
+
+# TODO: Make Update Multi Agent as well
+def update(title: str, content: str, source: str = "", category: str = "misc", keep_format: bool = False) -> Path:
     """Create or replace a wiki page with LLM-generated content."""
 
     folder = WIKI / category
@@ -147,34 +325,40 @@ def update(title: str, content: str, source: str = "", category: str = "misc") -
     path = folder /  f"{slug or 'untitled'}.md"
 
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    if keep_format:
+        result = content.rstrip()
 
-    prompt = f"""
-You maintain a concise, factual Markdown knowledge wiki.
+        if source:
+            result += f"\n\nSource: {source}"
 
-Update the page below using the new material.
-- Preserve useful existing information.
-- Remove repetition.
-- Do not invent facts.
-- Use clear headings.
-- Keep source references when supplied.
-- Return only the complete Markdown page.
+    else:
+        prompt = f"""
+        You maintain a concise, factual Markdown knowledge wiki.
 
-Page title: {title}
+        Update the page below using the new material.
+        - Preserve useful existing information.
+        - Remove repetition.
+        - Do not invent facts.
+        - Use clear headings.
+        - Keep source references when supplied.
+        - Return only the complete Markdown page.
 
-Existing page:
-{existing or "(No existing page)"}
+        Page title: {title}
 
-New material:
-{content}
+        Existing page:
+        {existing or "(No existing page)"}
 
-Source:
-{source or "(Not specified)"}
-"""
+        New material:
+        {content}
 
-    result = ask_model(
-        prompt,
-        system="You are a careful knowledge-base editor.",
-    )
+        Source:
+        {source or "(Not specified)"}
+        """
+
+        result = ask_model(
+            prompt,
+            system="You are a careful knowledge-base editor.",
+        )
     path.write_text(result.rstrip() + "\n", encoding="utf-8")
     reindex()
     return path
@@ -221,35 +405,20 @@ def ingest(source_path: str) -> Path | None:
     if not text:
         raise ValueError("The source file is empty.")
 
-    prompt = f"""
-Analyze the source material and extract its main topic.
-Select the CORRECT category from the Approved list
-If a piece of data feels like it shouldn't go in any of the specific categories, it should go in misc
+    # result = ask_model(
+    #     prompt,
+    #     system="You extract useful, accurate knowledge from documents.",
+    # )
 
-APPROVED CATEGORIES: {CATEGORIES}
+    # first_line, separator, body = result.partition("\n")
+    # # title = first_line.removeprefix("TITLE:").strip()
 
-{PAGEFORMAT}
+    results = generate_page(text)
 
-SOURCE:
-{text}
+    page_content = assemble_page(results)
 
-Preserve important facts, names, definitions, and qualifications.
-You must NOT invent information, the only information you should add to the fils should come from the markdown
-You only know what you are provided
-Do not use outside information to aid in your creation of the markdown file
-
-
-"""
-
-    result = ask_model(
-        prompt,
-        system="You extract useful, accurate knowledge from documents.",
-    )
-
-    first_line, separator, body = result.partition("\n")
-    # title = first_line.removeprefix("TITLE:").strip()
     metadata = {}
-    for line in result.splitlines():
+    for line in page_content.splitlines():
         if ":" in line:
             key, value = line.split(":", 1)
 
@@ -268,10 +437,6 @@ Do not use outside information to aid in your creation of the markdown file
     if category not in CATEGORIES:
         category = "misc"
 
-    if not separator or not title:
-        title = path.stem.replace("_", " ").replace("-", " ").title()
-        body = result
-
     if path.is_relative_to(inbox):
         destination = processed / path.name
 
@@ -282,7 +447,14 @@ Do not use outside information to aid in your creation of the markdown file
     else:
         source_path = path
 
-    wiki_page = update(title, body, source=str(path), category=str(category))
+    wiki_page = update(
+        title, 
+        page_content, 
+        source=str(source_path), 
+        category=str(category),
+        keep_format=True
+    )
+
     return wiki_page
 
 
