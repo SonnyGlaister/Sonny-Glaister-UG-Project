@@ -1,10 +1,9 @@
-# Queen Mary Pool Club
+TITLE: Queen Mary Pool Club
+CATEGORY: groups
+LINKED GROUPS: Queen Mary Pool Club
+LINKED ACTIVITIES: POOL
+LINKED LOCATIONS: NONE
 
-## Overview
-Queen Mary Pool Club is a university-affiliated club offering pool sessions twice weekly. It features both casual and competitive sessions to cater to diverse participant interests.
+CONTENT: Queen Mary Pool Club is a club at Queen Mary University that plays pool twice a week. It offers casual and competitive sessions, providing something for everyone.
 
-## Linked Locations
-- Queen Mary University
-
-Source:  
-C:\Users\sonny\Desktop\UG Project\sources\inbox\QMPoolClub.md
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\QMPoolClub.md

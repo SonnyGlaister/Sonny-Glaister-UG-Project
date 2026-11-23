@@ -1,19 +1,9 @@
-# Greenpeace
+TITLE: Greenpeace
+CATEGORY: groups
+LINKED GROUPS: Greenpeace
+LINKED ACTIVITIES: campaigning for environmental protection
+LINKED LOCATIONS: NONE
 
-## Category  
-groups  
+CONTENT: Greenpeace is an environmental organisation with members and supporters working on environmental campaigns. Activities include campaigning for environmental protection. Category: groups. Linked groups: Greenpeace. Linked activities: campaigning for environmental protection. Linked locations: NONE.
 
-## Linked Activities  
-- campaigning for environmental protection  
-
-## Linked Locations  
-- (none)  
-
-## Linked Groups  
-- (none)  
-
-## Content  
-Greenpeace is an environmental organisation whose members and supporters work on environmental campaigns. Its activities include campaigning for environmental protection.  
-
-Source:  
-C:\Users\sonny\Desktop\UG Project\sources\inbox\greenpeace.md
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\greenpeace.md
