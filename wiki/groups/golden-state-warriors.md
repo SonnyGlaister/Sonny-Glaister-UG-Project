@@ -1,16 +1,9 @@
-# Golden State Warriors
+TITLE: Golden State Warriors
+CATEGORY: groups
+LINKED GROUPS: NONE
+LINKED ACTIVITIES: playing basketball
+LINKED LOCATIONS: San Francisco Bay Area
 
-## Category  
-Groups  
+CONTENT: The Golden State Warriors are a professional basketball team based in the San Francisco Bay Area, playing basketball in the NBA.
 
-## Linked Groups  
-- Golden State Warriors  
-
-## Linked Activities  
-- Basketball  
-
-## Linked Locations  
-- San Francisco Bay Area  
-
-**Source**:  
-C:\Users\sonny\Desktop\UG Project\sources\processed\golden_state_warriors.md
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\golden_state_warriors.md

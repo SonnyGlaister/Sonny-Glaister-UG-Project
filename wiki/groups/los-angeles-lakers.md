@@ -1,6 +1,9 @@
-# Los Angeles Lakers
+TITLE: Los Angeles Lakers
+CATEGORY: groups
+LINKED GROUPS: Los Angeles Lakers
+LINKED ACTIVITIES: basketball
+LINKED LOCATIONS: Los Angeles
 
-The Los Angeles Lakers are a professional basketball team based in **Los Angeles**, competing in the **NBA**. The team consists of players who collaborate as a collective unit to achieve success in the league.
+CONTENT: The Los Angeles Lakers are a professional basketball team based in Los Angeles. They compete in the NBA and consist of many players who collaborate as a team.
 
-**Source**:  
-[C:\Users\sonny\Desktop\UG Project\sources\inbox\lakers.md](C:\Users\sonny\Desktop\UG Project\sources\inbox\lakers.md)
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\lakers.md

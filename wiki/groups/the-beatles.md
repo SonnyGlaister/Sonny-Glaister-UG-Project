@@ -1,10 +1,9 @@
-# The Beatles
+TITLE: The Beatles
+CATEGORY: groups
+LINKED GROUPS: THE BEATLES
+LINKED ACTIVITIES: making music, performing music
+LINKED LOCATIONS: Liverpool
 
-**Category**: groups  
-**Linked Activities**: making and performing music  
-**Linked Locations**: Liverpool  
+CONTENT: The Beatles were a music group from Liverpool consisting of John Lennon, Paul McCartney, George Harrison, and Ringo Starr. Their activities included making and performing music.
 
-The Beatles were a music group from Liverpool, active in the 1960s. The band consisted of John Lennon, Paul McCartney, George Harrison, and Ringo Starr. Their primary activity involved creating and performing music, which became foundational to the development of rock and popular music globally.
-
-Source:  
-C:\Users\sonny\Desktop\UG Project\sources\inbox\beatles.md
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\beatles.md

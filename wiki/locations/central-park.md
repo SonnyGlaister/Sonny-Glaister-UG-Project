@@ -1,11 +1,9 @@
-# Central Park
+TITLE: Central Park
+CATEGORY: locations
+LINKED GROUPS: NONE
+LINKED ACTIVITIES: walking, recreation, sports, outdoor events
+LINKED LOCATIONS: Central Park, Manhattan, New York City
 
-**Category**: locations  
-**Linked Activities**: walking, recreation, sports, outdoor events  
-**Linked Groups**:  
-**Linked Locations**:  
+CONTENT: Central Park is a large public park in Manhattan, New York City. People use it for walking, recreation, sports and outdoor events.
 
-Central Park is a large public park located in Manhattan, New York City. It serves as a popular destination for various activities including walking, recreation, sports, and outdoor events.
-
-Source:  
-C:\Users\sonny\Desktop\UG Project\sources\inbox\central_park.md
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\central_park.md

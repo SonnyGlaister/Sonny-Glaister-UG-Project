@@ -1,14 +1,9 @@
-# Crypto.com Arena  
+TITLE: Crypto.com Arena
+CATEGORY: locations
+LINKED GROUPS: NONE
+LINKED ACTIVITIES: basketball games, concerts
+LINKED LOCATIONS: Los Angeles, California
 
-## Location  
-- **City/State**: Los Angeles, California  
-- **Type**: Indoor sports and entertainment venue  
+CONTENT: Crypto.com Arena is an indoor sports and entertainment venue in Los Angeles, California. It is used for basketball games, concerts and other events.
 
-## Events  
-Hosts a variety of activities including:  
-- Basketball games  
-- Concerts  
-- Other entertainment events  
-
-Source:  
-C:\Users\sonny\Desktop\UG Project\sources\inbox\staples_center.md
+Source: C:\Users\sonny\Desktop\UG Project\sources\processed\staples_center.md

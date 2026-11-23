@@ -210,14 +210,17 @@ def run_agent(agent_name: str, source: str, previous_results: dict = None) -> st
 # Page generation pipeline construction
 def generate_page(source: str) -> dict:
     results = {}
+    count = 1
+    print(source)
     for agent_name in LINT_AGENTS:
-        # CAN ADD DEBUG HERE TO CHECK WHAT AGENT IS RUNNING
-        print(agent_name)
+        print("(",count,"/", len(LINT_AGENTS), ")", agent_name)
+        count += 1
         results[agent_name] = run_agent(
             agent_name,
             source,
             results
         )
+    print("Page Generated")
     return results;
 
 # Combining the agent outputs into specified format above
@@ -230,14 +233,13 @@ def assemble_page(results: dict) -> str:
     content = results["Content Agent"]
 
     return f"""
+{title}
+{category}
+{groups}
+{activities}
+{locations}
 
-    {title}
-    {category}
-    {groups}
-    {activities}
-    {locations}
-
-    {content}
+{content}
 """.strip()
     
 
@@ -380,7 +382,6 @@ def ingest(source_path: str) -> Path | None:
         if not files:
             print(f"No .txt or .md files found in {path}")
             return None
-
         for file in files:
             try:
                 ingest(str(file))
